@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PG Gold Tracker</title>
+<style>
+body{margin:0;background:#f5f6f8;color:#17181c;font-family:Inter,Arial,sans-serif}.wrap{max-width:1050px;margin:auto;padding:28px 18px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.brand{font-size:23px;font-weight:800}.brand span{color:#b88918}.muted{color:#747780;font-size:13px}.grid{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}.card{background:white;border:1px solid #e6e7eb;border-radius:18px;padding:22px;box-shadow:0 5px 20px #00000006}.price{font-size:44px;font-weight:900;margin:8px 0}.score{text-align:center}.score b{font-size:60px}.badge{display:inline-block;padding:8px 14px;border-radius:99px;font-weight:800;margin-top:8px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}.metric{background:#f7f7f9;padding:13px;border-radius:12px}.metric b{display:block;margin-top:6px}.chart{height:310px;margin-top:12px}.chart svg{width:100%;height:100%}.gridline{stroke:#eee;stroke-width:1}.line{fill:none;stroke:#b88918;stroke-width:3}.dot{fill:#b88918}.levels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.level{border:1px solid #e6e7eb;border-radius:12px;padding:14px}.level b{font-size:20px}.footer{margin-top:18px}.error{color:#b33;display:none}@media(max-width:760px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.levels{grid-template-columns:1fr}.price{font-size:36px}}
+</style></head>
+<body><div class="wrap">
+<div class="top"><div class="brand">PG <span>Gold Tracker</span></div><div class="muted" id="updated">Loading...</div></div>
+<div class="grid">
+<section class="card"><div class="muted">PUBLIC GOLD GAP ACCOUNT 24K</div><div class="price">RM <span id="price">—</span> <small style="font-size:15px;color:#777">/ gram</small></div><div class="muted">Harga terakhir dari data scraper</div>
+<div class="metrics"><div class="metric"><small>30D Avg</small><b id="a30">—</b></div><div class="metric"><small>90D Avg</small><b id="a90">—</b></div><div class="metric"><small>30D Low</small><b id="lo">—</b></div><div class="metric"><small>30D High</small><b id="hi">—</b></div></div></section>
+<section class="card score"><div class="muted">BUY SCORE</div><b id="score">—</b><div>/ 100</div><div class="badge" id="signal">—</div><p class="muted">Indicator berdasarkan sejarah PG Gold yang dikumpul. Bukan jaminan harga.</p></section>
+</div>
+<section class="card" style="margin-top:16px"><b>PG Gold History</b><div class="chart" id="chart"></div><div class="levels"><div class="level"><small>BUY</small><br><b id="buy">—</b></div><div class="level"><small>STRONG BUY</small><br><b id="strong">—</b></div><div class="level"><small>VERY STRONG</small><br><b id="very">—</b></div></div></section>
+<div class="footer muted">Data source: Public Gold page melalui GitHub Actions scraper. Pastikan penggunaan scraping mematuhi terma laman/sumber data.</div>
+<div class="error" id="err"></div>
+</div>
+<script>
+const avg=(a,n)=>{a=a.slice(-n);return a.reduce((s,x)=>s+x.price,0)/a.length};
+const rm=n=>'RM '+Number(n).toFixed(2);
+function draw(d){
+ const p=d[d.length-1].price,a30=avg(d,30),a90=avg(d,90),v=d.slice(-30).map(x=>x.price),lo=Math.min(...v),hi=Math.max(...v);
+ let score=0;if(p<a30)score+=25;if(p<a90)score+=25;if(p<=lo*1.03)score+=20;if(p<=a30*.97)score+=15;if((p-hi)/hi<-.05)score+=15;score=Math.min(100,score);
+ document.querySelector('#price').textContent=p.toFixed(2);document.querySelector('#a30').textContent=rm(a30);document.querySelector('#a90').textContent=rm(a90);document.querySelector('#lo').textContent=rm(lo);document.querySelector('#hi').textContent=rm(hi);document.querySelector('#score').textContent=score;
+ const sig=score>=80?'STRONG BUY':score>=60?'BUY':score>=40?'WAIT / SMALL BUY':'WAIT';document.querySelector('#signal').textContent=sig;document.querySelector('#signal').style.background=score>=60?'#e8f7ef':'#fff3d8';document.querySelector('#signal').style.color=score>=60?'#16834b':'#9a6900';
+ document.querySelector('#buy').textContent=rm(a30*.98);document.querySelector('#strong').textContent=rm(a30*.96);document.querySelector('#very').textContent=rm(a30*.93);
+ const W=900,H=300,pad=35,min=lo-2,max=hi+2,pts=v.map((x,i)=>[pad+i*(W-2*pad)/(v.length-1),H-pad-(x-min)/(max-min)*(H-2*pad)]),path=pts.map((q,i)=>(i?'L':'M')+q[0]+' '+q[1]).join(' ');
+ document.querySelector('#chart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><line class="gridline" x1="35" y1="45" x2="865" y2="45"/><line class="gridline" x1="35" y1="150" x2="865" y2="150"/><line class="gridline" x1="35" y1="255" x2="865" y2="255"/><path class="line" d="${path}"/><circle class="dot" cx="${pts.at(-1)[0]}" cy="${pts.at(-1)[1]}" r="5"/></svg>`;
+ document.querySelector('#updated').textContent=d[d.length-1].date;
+}
+fetch('data/gold.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('gold.json tidak dijumpai');return r.json()}).then(x=>{document.querySelector('#updated').textContent=x.updated||'Updated';draw(x.history)}).catch(e=>{document.querySelector('#err').style.display='block';document.querySelector('#err').textContent=e.message});
+</script></body></html>
