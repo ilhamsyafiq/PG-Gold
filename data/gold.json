@@ -3,7 +3,7 @@
   "product": "GOLD GAP ACCOUNT 24K",
   "unit": "gram",
   "currency": "MYR",
-  "updated": "2026-10-08",
+  "updated": "2026-10-09",
   "history": [
     {
       "date": "2026-09-20",
@@ -80,8 +80,12 @@
     {
       "date": "2026-10-08",
       "price": 589.0
+    },
+    {
+      "date": "2026-10-09",
+      "price": 586.0
     }
   ],
-  "source_updated": "08-Oct-2026",
+  "source_updated": "09-Oct-2026",
   "source_url": "https://publicgold.com.my/index.php?pgcode=PG01881462&route=dealer%2Fpage"
 }
